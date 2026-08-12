@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Kaggle credentials
+kaggle.json
+**/kaggle.json
+
+# Dataset & heavy files
+backend/data/
+data/
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/gradcam_outputs/*
+!backend/gradcam_outputs/.gitkeep
+
+# Environment variables
+.env
+backend/.env
+
+# IDE & OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+# Generated images
+backend/images/
+backend/images/**
+
+# Trained ML models
+backend/models/*.joblib
+backend/models/*.h5
+backend/models/*.keras
+backend/models/*.pt
+backend/models/*.pth
+
+# Generated training/evaluation files
+backend/models/*.json
+backend/reduced_data.csv
+
+# Temporary/generated files
+~$*.pptx

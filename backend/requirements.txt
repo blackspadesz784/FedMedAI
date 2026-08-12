@@ -1,0 +1,19 @@
+# FedMed AI — Backend Production Requirements
+# Install with: pip install -r backend/requirements.txt
+
+# ── Web framework ──────────────────────────────────────────────────────────────
+flask>=3.0.0
+flask-cors>=4.0.0
+gunicorn>=22.0.0
+python-dotenv>=1.0.0
+
+# ── ML inference ───────────────────────────────────────────────────────────────
+tensorflow>=2.15.0
+numpy>=1.24.0
+
+# ── Image processing ───────────────────────────────────────────────────────────
+Pillow>=10.0.0
+opencv-python-headless>=4.8.0
+
+# ── Utilities ──────────────────────────────────────────────────────────────────
+werkzeug>=3.0.0

@@ -1,0 +1,26 @@
+# render.yaml — Render Deployment Configuration for FedMed AI Backend
+# Learn more at https://render.com/docs/yaml-deploys
+
+services:
+  - type: web
+    name: fedmed-ai-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "cd backend && gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120"
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: MODEL_DIR
+        value: models
+      - key: GRADCAM_DIR
+        value: gradcam_outputs
+      - key: UPLOADS_DIR
+        value: uploads
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: FLASK_DEBUG
+        value: "false"
