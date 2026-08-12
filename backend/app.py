@@ -167,6 +167,12 @@ def load_model_and_artifacts():
         "labels": _labels, "label_counts": {},
     })
 
+    # ── Load prediction history ───────────────────────────────────────────────
+    global PREDICTION_LOG
+    if config.PREDICTIONS_PATH.exists():
+        PREDICTION_LOG = _load_json(config.PREDICTIONS_PATH, [])
+        print(f"  [OK] Loaded {len(PREDICTION_LOG)} historical predictions from {config.PREDICTIONS_PATH.name}")
+
     print(f"  [OK] All artifacts loaded.")
     print(f"  [OK] Backend ready — serving at http://{config.HOST}:{config.PORT}")
     print("=" * 60 + "\n")
@@ -430,7 +436,7 @@ def predict():
     except Exception as e:
         print(f"  Saliency map error (non-fatal): {e}")
 
-    # -- Log prediction --
+    # -- Log & persist prediction --
     entry = {
         "id": pred_id,
         "patient": patient_meta.get("name", "Unnamed patient"),
@@ -444,6 +450,22 @@ def predict():
     }
     PREDICTION_LOG.append(entry)
 
+    # Save updated prediction log to disk
+    try:
+        with open(config.PREDICTIONS_PATH, "w") as f:
+            json.dump(PREDICTION_LOG, f, indent=2)
+    except Exception as e:
+        print(f"  WARNING: Could not write {config.PREDICTIONS_PATH}: {e}")
+
+    # Save Grad-CAM image to disk if generated
+    if gradcam_url and pred_id in GRADCAM_STORE:
+        try:
+            g_path = config.GRADCAM_DIR / f"gradcam_{pred_id}.png"
+            with open(g_path, "wb") as f:
+                f.write(GRADCAM_STORE[pred_id])
+        except Exception as e:
+            print(f"  WARNING: Could not save Grad-CAM image: {e}")
+
     return jsonify({
         "top_disease": top_label,
         "confidence": top_score,
@@ -452,7 +474,6 @@ def predict():
         "gradcam_overlay_url": gradcam_url,
         "prediction_id": pred_id,
         "all_scores": [
-
             {"name": lbl, "score": round(float(s), 4)}
             for lbl, s in zip(_labels, scores.tolist())
         ],
@@ -463,6 +484,10 @@ def predict():
 def get_gradcam(pred_id):
     png_bytes = GRADCAM_STORE.get(pred_id)
     if png_bytes is None:
+        # Check disk fallback
+        disk_path = config.GRADCAM_DIR / f"gradcam_{pred_id}.png"
+        if disk_path.exists():
+            return send_file(str(disk_path), mimetype="image/png")
         return jsonify({"error": "Grad-CAM not found for this prediction ID."}), 404
     return send_file(
         io.BytesIO(png_bytes),
@@ -502,10 +527,10 @@ def dashboard_overview():
     predictions_today = sum(1 for p in PREDICTION_LOG if p.get("date") == today)
     avg_confidence = (
         float(np.mean([p["confidence"] for p in PREDICTION_LOG]))
-        if PREDICTION_LOG else float(_model_evaluation.get("auc", 0.93))
+        if PREDICTION_LOG else 0.0
     )
     return jsonify({
-        "total_patients": _dataset_stats.get("total_images", 0),
+        "total_patients": len(PREDICTION_LOG),
         "predictions_today": predictions_today,
         "avg_confidence": round(avg_confidence, 4),
         "active_hospitals": config.NUM_HOSPITALS,
@@ -632,21 +657,25 @@ def get_visualizations():
             "title": "Disease count plot",
             "desc": "Frequency of each label across the full dataset.",
         },
-        "disease_share_pie.png": {
-            "title": "Share of diagnoses",
-            "desc": "Proportion pie chart for the top disease classes.",
+        "age_vs_finding_boxplot.png": {
+            "title": "Age vs. finding boxplot",
+            "desc": "Spread of patient age within each diagnosis.",
         },
-        "age_distribution.png": {
-            "title": "Patient age distribution",
-            "desc": "Histogram of patient ages in the training set.",
+        "sample_xray_grid.png": {
+            "title": "Sample X-ray grid",
+            "desc": "Representative images per class, pre-augmentation.",
         },
-        "finding_correlation_heatmap.png": {
-            "title": "Finding co-occurrence",
-            "desc": "Correlation matrix between simultaneously occurring findings.",
+        "pixel_intensity_histogram.png": {
+            "title": "Pixel intensity histogram",
+            "desc": "Normalized pixel value distribution after preprocessing.",
         },
-        "fl_rounds_progress.png": {
-            "title": "FL training progress",
-            "desc": "Global accuracy, loss, and AUC across federated communication rounds.",
+        "class_imbalance_chart.png": {
+            "title": "Class imbalance chart",
+            "desc": "Ratio of minority to majority classes pre/post augmentation.",
+        },
+        "hospital_split_pie.png": {
+            "title": "Hospital split pie chart",
+            "desc": "Share of the dataset allocated to each virtual hospital.",
         },
     }
     available = []

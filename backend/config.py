@@ -24,6 +24,7 @@ CONFUSION_MATRIX_PATH = MODEL_DIR / "confusion_matrix.json"
 FL_HISTORY_PATH = MODEL_DIR / "fl_history.json"
 HOSPITAL_ROUND_LOGS_PATH = MODEL_DIR / "hospital_round_logs.json"
 DATASET_STATS_PATH = MODEL_DIR / "dataset_stats.json"
+PREDICTIONS_PATH = MODEL_DIR / "predictions_history.json"
 
 # ── Server ────────────────────────────────────────────────────────────────────
 HOST = os.getenv("HOST", "0.0.0.0")

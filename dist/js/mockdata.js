@@ -7,32 +7,16 @@
  */
 const MOCK = {
   overview: {
-    total_patients: 1284,
-    predictions_today: 37,
-    avg_confidence: 0.911,
+    total_patients: 0,
+    predictions_today: 0,
+    avg_confidence: 0.0,
     active_hospitals: 4,
   },
-  recentPredictions: [
-    { patient: "R. Kapoor", finding: "Pneumonia", confidence: 0.94, hospital: "Hospital A", time: "9:41 AM" },
-    { patient: "S. Iyer", finding: "No Finding", confidence: 0.88, hospital: "Hospital C", time: "9:22 AM" },
-    { patient: "M. Chen", finding: "Cardiomegaly", confidence: 0.79, hospital: "Hospital B", time: "8:57 AM" },
-    { patient: "A. Farah", finding: "Effusion", confidence: 0.91, hospital: "Hospital D", time: "8:30 AM" },
-    { patient: "J. Okafor", finding: "Atelectasis", confidence: 0.83, hospital: "Hospital A", time: "8:12 AM" },
-    { patient: "L. Novak", finding: "No Finding", confidence: 0.95, hospital: "Hospital B", time: "7:58 AM" },
-  ],
-  history: [
-    { patient: "R. Kapoor", age: 54, finding: "Pneumonia", confidence: 0.94, hospital: "Hospital A", date: "2026-07-30" },
-    { patient: "S. Iyer", age: 61, finding: "No Finding", confidence: 0.88, hospital: "Hospital C", date: "2026-07-30" },
-    { patient: "M. Chen", age: 47, finding: "Cardiomegaly", confidence: 0.79, hospital: "Hospital B", date: "2026-07-29" },
-    { patient: "A. Farah", age: 39, finding: "Effusion", confidence: 0.91, hospital: "Hospital D", date: "2026-07-29" },
-    { patient: "J. Okafor", age: 66, finding: "Atelectasis", confidence: 0.83, hospital: "Hospital A", date: "2026-07-28" },
-    { patient: "L. Novak", age: 29, finding: "No Finding", confidence: 0.95, hospital: "Hospital B", date: "2026-07-27" },
-    { patient: "P. Singh", age: 72, finding: "Infiltration", confidence: 0.86, hospital: "Hospital C", date: "2026-07-26" },
-    { patient: "T. Almeida", age: 58, finding: "Pneumonia", confidence: 0.77, hospital: "Hospital D", date: "2026-07-25" },
-  ],
+  recentPredictions: [],
+  history: [],
   diseaseStats: {
     labels: ["No Finding", "Infiltration", "Effusion", "Atelectasis", "Pneumonia", "Cardiomegaly", "Pneumothorax", "Mass"],
-    counts: [412, 231, 198, 176, 154, 121, 88, 61],
+    counts: [0, 0, 0, 0, 0, 0, 0, 0],
   },
   ageHistogram: {
     labels: ["0-10", "11-20", "21-30", "31-40", "41-50", "51-60", "61-70", "71-80", "81-90"],
@@ -58,12 +42,12 @@ const MOCK = {
     counts: [1780, 980, 845, 760, 640, 512, 380, 309],
   },
   vizGallery: [
-    { title: "Disease count plot", desc: "Frequency of each label across the full dataset." },
-    { title: "Age vs. finding boxplot", desc: "Spread of patient age within each diagnosis." },
-    { title: "Sample X-ray grid", desc: "Representative images per class, pre-augmentation." },
-    { title: "Pixel intensity histogram", desc: "Normalized pixel value distribution after preprocessing." },
-    { title: "Class imbalance chart", desc: "Ratio of minority to majority classes pre/post augmentation." },
-    { title: "Hospital split pie chart", desc: "Share of the dataset allocated to each virtual hospital." },
+    { title: "Disease count plot", desc: "Frequency of each label across the full dataset.", url: "assets/figures/disease_distribution_bar.png" },
+    { title: "Age vs. finding boxplot", desc: "Spread of patient age within each diagnosis.", url: "assets/figures/age_vs_finding_boxplot.png" },
+    { title: "Sample X-ray grid", desc: "Representative images per class, pre-augmentation.", url: "assets/figures/sample_xray_grid.png" },
+    { title: "Pixel intensity histogram", desc: "Normalized pixel value distribution after preprocessing.", url: "assets/figures/pixel_intensity_histogram.png" },
+    { title: "Class imbalance chart", desc: "Ratio of minority to majority classes pre/post augmentation.", url: "assets/figures/class_imbalance_chart.png" },
+    { title: "Hospital split pie chart", desc: "Share of the dataset allocated to each virtual hospital.", url: "assets/figures/hospital_split_pie.png" },
   ],
   flStatus: { current_round: 18, total_rounds: 25, global_auc: 0.93, status: "aggregating" },
   hospitals: [
