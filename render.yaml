@@ -3,7 +3,7 @@
 
 services:
   - type: web
-    name: fedmed-ai-backend
+    name: fedmedai
     env: python
     region: oregon
     plan: free

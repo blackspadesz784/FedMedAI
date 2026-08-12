@@ -137,7 +137,7 @@ If you prefer not to use Git LFS on GitHub, upload `fedrad_global_model.keras` t
 
 | Setting | Value |
 |---|---|
-| **Name** | `fedmed-ai-backend` |
+| **Name** | `fedmedai` |
 | **Region** | Choose closest to you (e.g. Oregon / Frankfurt) |
 | **Branch** | `main` |
 | **Root Directory** | *(leave empty)* |
@@ -159,8 +159,8 @@ Under **Advanced** → **Environment Variables**, add:
 | `FLASK_DEBUG` | `false` | Production flag |
 
 5. Click **Create Web Service**.
-6. Once deployed, Render will provide a URL, e.g. `https://fedmed-ai-backend.onrender.com`.
-7. Verify by navigating to `https://fedmed-ai-backend.onrender.com/health` in your browser.
+6. Once deployed, Render will provide a URL, e.g. `https://fedmedai.onrender.com`.
+7. Verify by navigating to `https://fedmedai.onrender.com/health` in your browser.
 
 ---
 
@@ -171,7 +171,7 @@ Under **Advanced** → **Environment Variables**, add:
 In `frontend/js/config.js`, update `window.BACKEND_URL`:
 
 ```javascript
-window.BACKEND_URL = window.BACKEND_URL || "https://fedmed-ai-backend.onrender.com/api";
+window.BACKEND_URL = window.BACKEND_URL || "https://fedmedai.onrender.com/api";
 ```
 
 ### Step 4.2: Deploy via GitHub Actions (Automated)

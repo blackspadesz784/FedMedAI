@@ -8,7 +8,7 @@
  */
 
 // config.js must be loaded before this script (see index.html / login.html).
-const API_BASE_URL = window.BACKEND_URL || "http://127.0.0.1:5000/api";
+const API_BASE_URL = window.BACKEND_URL || "https://fedmedai.onrender.com/api";
 
 async function request(path, options = {}) {
   const url = `${API_BASE_URL}${path}`;
