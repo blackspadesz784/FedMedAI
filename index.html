@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FedMed AI — Doctor Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.js"></script>
+<link rel="stylesheet" href="css/variables.css" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/dashboard.css" />
+</head>
+<body>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<div class="app-shell" id="appShell">
+
+  <!-- ============================== SIDEBAR ============================== -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span data-icon="logo"></span>
+      <div class="sidebar-brand-text">FedRad Console<span>chest x-ray · federated AI</span></div>
+    </div>
+
+    <div class="sidebar-section-label">Clinical</div>
+    <button class="nav-item active" data-view="dashboard"><span data-icon="dashboard"></span><span>Dashboard</span></button>
+    <button class="nav-item" data-view="upload"><span data-icon="upload"></span><span>Upload &amp; Predict</span></button>
+    <button class="nav-item" data-view="history"><span data-icon="history"></span><span>Patient History</span></button>
+
+    <div class="sidebar-section-label">Analytics</div>
+    <button class="nav-item" data-view="disease-stats"><span data-icon="stats"></span><span>Disease Statistics</span></button>
+    <button class="nav-item" data-view="dataset-stats"><span data-icon="dataset"></span><span>Dataset Statistics</span></button>
+    <button class="nav-item" data-view="visualizations"><span data-icon="viz"></span><span>Data Visualizations</span></button>
+
+    <div class="sidebar-section-label">Federated Learning</div>
+    <button class="nav-item" data-view="fl-monitor"><span data-icon="network"></span><span>FL Monitor</span></button>
+    <button class="nav-item" data-view="model-performance"><span data-icon="chart"></span><span>Model Performance</span></button>
+
+    <div class="sidebar-section-label">Project</div>
+    <button class="nav-item" data-view="about"><span data-icon="info"></span><span>About Project</span></button>
+
+    <div class="sidebar-footer">
+      <button class="collapse-btn" id="collapseBtn"><span data-icon="chevron"></span><span>Collapse</span></button>
+      <button class="collapse-btn" id="logoutBtn"><span data-icon="logout"></span><span>Sign out</span></button>
+    </div>
+  </aside>
+
+  <!-- ============================== MAIN COLUMN ============================== -->
+  <div class="main-col">
+    <header class="topbar">
+      <div class="topbar-title"><span class="eyebrow" id="topbarEyebrow">Overview</span><span id="topbarTitle">Good morning, Doctor</span></div>
+      <div class="topbar-actions">
+        <button class="icon-btn" title="Search"><span data-icon="search"></span></button>
+        <button class="icon-btn" title="Notifications"><span data-icon="bell"></span><span class="dot"></span></button>
+        <div class="profile-chip">
+          <div class="profile-avatar" id="profileInitials">AM</div>
+          <div class="who"><strong id="profileName">Dr. Aanya Mehta</strong><small id="profileHospital">Hospital A</small></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ======================= VIEW: DASHBOARD ======================= -->
+    <section class="view active" id="view-dashboard">
+      <div class="vital-strip">
+        <div class="vital-text">
+          <h2>4 hospitals. 1 global model. 0 shared images.</h2>
+          <p>Federated averaging is currently synchronized across all hospital nodes. Here's today's snapshot.</p>
+        </div>
+        <div class="vital-line">
+          <svg viewBox="0 0 380 60" preserveAspectRatio="none">
+            <path d="M0,30 L40,30 L52,10 L64,50 L76,18 L88,30 L140,30 L152,8 L164,52 L176,30 L230,30 L242,14 L254,46 L266,30 L380,30" />
+          </svg>
+        </div>
+      </div>
+
+      <div class="grid grid-4" id="overviewStatGrid">
+        <!-- injected by dashboard.js -->
+      </div>
+
+      <div class="grid grid-2-1" style="margin-top: 24px;">
+        <div class="card">
+          <div class="card-head"><h3>Recent predictions</h3><span class="tag">last 6 uploads</span></div>
+          <div class="table-wrap"><table id="recentPredictionsTable">
+            <thead><tr><th>Patient</th><th>Finding</th><th>Confidence</th><th>Hospital</th><th>Time</th></tr></thead>
+            <tbody></tbody>
+          </table></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>FL round status</h3><span class="tag mono" id="flRoundTag">round —</span></div>
+          <div id="flMiniList" style="display:flex; flex-direction:column; gap:14px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= VIEW: UPLOAD & PREDICT ======================= -->
+    <section class="view" id="view-upload">
+      <div class="view-header">
+        <div><h2>Upload &amp; predict</h2><p>Upload a chest X-ray to run it through the global federated model.</p></div>
+      </div>
+
+      <div class="grid grid-2-1">
+        <div class="card">
+          <div class="card-head"><h3>Chest X-ray upload</h3><span class="tag">JPG · PNG · DICOM-derived PNG</span></div>
+
+          <div id="dropzone" style="border:2px dashed var(--surface-2); border-radius: var(--radius-lg); padding: 40px 20px; text-align:center; cursor:pointer; transition: border-color .2s;">
+            <div style="color:var(--green-600); margin-bottom:10px; display:flex; justify-content:center;" data-icon="image"></div>
+            <p style="margin-bottom:4px; font-weight:600; color:var(--ink-900);">Drag &amp; drop an X-ray image here</p>
+            <p style="font-size:0.82rem;">or click to browse from your device</p>
+            <input type="file" id="fileInput" accept="image/*" style="display:none;" />
+          </div>
+          <div id="previewWrap" style="display:none; margin-top:16px;">
+            <img id="previewImg" style="width:100%; max-height:280px; object-fit:contain; border-radius: var(--radius-md); background:#000;" />
+          </div>
+
+          <div class="grid grid-2" style="margin-top:18px;">
+            <div class="field"><label for="patientName">Patient name</label><input type="text" id="patientName" placeholder="e.g. R. Kapoor" /></div>
+            <div class="field"><label for="patientAge">Age</label><input type="number" id="patientAge" placeholder="e.g. 54" /></div>
+          </div>
+          <button class="btn btn-primary btn-block" id="predictBtn" disabled>
+            <span id="predictBtnLabel">Select an image to analyze</span>
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>How this works</h3></div>
+          <ol style="padding-left:18px; color:var(--ink-700); font-size:0.88rem; line-height:1.8;">
+            <li>Image is sent to the Flask API (<code>/api/predict</code>)</li>
+            <li>The current global federated model runs inference</li>
+            <li>Grad-CAM highlights the regions driving the prediction</li>
+            <li>Result is saved to this patient's history</li>
+          </ol>
+          <div class="pill pill-green" style="margin-top:8px;"><span class="dot blink"></span>Global model v<span id="modelVersionTag">—</span> active</div>
+        </div>
+      </div>
+
+      <!-- Prediction result -->
+      <div id="predictionResult" style="display:none; margin-top:24px;">
+        <div class="view-header"><div><h2>AI disease prediction</h2><p>Result for the uploaded chest X-ray.</p></div></div>
+        <div class="grid grid-2-1">
+          <div class="card">
+            <div class="card-head"><h3>Grad-CAM explainability</h3><span class="tag">class activation overlay</span></div>
+            <div style="position:relative;">
+              <img id="gradcamBase" style="width:100%; border-radius:var(--radius-md); background:#000;" />
+              <img id="gradcamOverlay" style="position:absolute; inset:0; width:100%; border-radius:var(--radius-md); opacity:0.55; mix-blend-mode:screen;" />
+            </div>
+            <div class="field" style="margin-top:14px;">
+              <label for="overlaySlider">Heatmap intensity</label>
+              <input type="range" id="overlaySlider" min="0" max="100" value="55" />
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Prediction summary</h3></div>
+            <div style="text-align:center; padding: 8px 0 18px;">
+              <div style="font-family:var(--font-mono); font-size:2.2rem; font-weight:700; color:var(--green-700);" id="topDiseaseName">—</div>
+              <div style="color:var(--ink-500); font-size:0.85rem;">primary finding</div>
+            </div>
+            <div class="progress-track" style="margin-bottom:6px;"><div class="progress-fill" id="confidenceBar" style="width:0%;"></div></div>
+            <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:var(--ink-500); margin-bottom:18px;">
+              <span>Confidence</span><span class="mono" id="confidenceValue">0%</span>
+            </div>
+            <h3 style="font-size:0.85rem; margin-bottom:10px;">Top predicted diseases</h3>
+            <div id="topDiseasesList" style="display:flex; flex-direction:column; gap:10px;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= VIEW: PATIENT HISTORY ======================= -->
+    <section class="view" id="view-history">
+      <div class="view-header">
+        <div><h2>Patient history</h2><p>All prior chest X-ray predictions across your sessions.</p></div>
+        <input type="text" id="historySearch" placeholder="Search by patient name..." style="max-width:260px; padding:10px 14px; border-radius:var(--radius-md); border:1.5px solid var(--surface-2);" />
+      </div>
+      <div class="card">
+        <div class="table-wrap"><table id="historyTable">
+          <thead><tr><th>Patient</th><th>Age</th><th>Finding</th><th>Confidence</th><th>Hospital</th><th>Date</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- ======================= VIEW: DISEASE STATISTICS ======================= -->
+    <section class="view" id="view-disease-stats">
+      <div class="view-header"><div><h2>Disease statistics</h2><p>Distribution of predicted findings across all patients.</p></div></div>
+      <div class="grid grid-2">
+        <div class="card"><div class="card-head"><h3>Disease distribution</h3><span class="tag">count</span></div><canvas id="chartDiseaseBar" height="220"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Share of diagnoses</h3><span class="tag">%</span></div><canvas id="chartDiseasePie" height="220"></canvas></div>
+      </div>
+      <div class="grid grid-2" style="margin-top:24px;">
+        <div class="card"><div class="card-head"><h3>Age distribution by finding</h3></div><canvas id="chartAgeHist" height="220"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Finding co-occurrence</h3><span class="tag">correlation heatmap</span></div><div id="corrHeatmap"></div></div>
+      </div>
+    </section>
+
+    <!-- ======================= VIEW: DATASET STATISTICS ======================= -->
+    <section class="view" id="view-dataset-stats">
+      <div class="view-header"><div><h2>Dataset statistics</h2><p>Summary of the source chest X-ray dataset used for federated training.</p></div></div>
+      <div class="grid grid-4" id="datasetStatGrid"></div>
+      <div class="grid grid-2" style="margin-top:24px;">
+        <div class="card"><div class="card-head"><h3>Class balance</h3></div><canvas id="chartClassBalance" height="230"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Train / validation / test split</h3></div><canvas id="chartSplit" height="230"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ======================= VIEW: DATA VISUALIZATIONS ======================= -->
+    <section class="view" id="view-visualizations">
+      <div class="view-header"><div><h2>Data visualization dashboard</h2><p>EDA gallery generated inside the backend notebook.</p></div></div>
+      <div class="grid grid-3" id="vizGallery"></div>
+    </section>
+
+    <!-- ======================= VIEW: FL MONITOR ======================= -->
+    <section class="view" id="view-fl-monitor">
+      <div class="view-header">
+        <div><h2>Federated learning monitor</h2><p>Live status of hospital-wise local training and global aggregation.</p></div>
+        <span class="pill pill-green"><span class="dot blink"></span><span id="flStatusLabel">Round in progress</span></span>
+      </div>
+
+      <div class="grid grid-4" id="flStatGrid"></div>
+
+      <div class="card" style="margin-top:24px;">
+        <div class="card-head"><h3>Hospital-wise training status</h3><span class="tag">FedAvg</span></div>
+        <div class="table-wrap"><table id="hospitalTable">
+          <thead><tr><th>Hospital</th><th>Samples</th><th>Local epoch</th><th>Local loss</th><th>Local accuracy</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+
+      <div class="grid grid-2" style="margin-top:24px;">
+        <div class="card"><div class="card-head"><h3>FedAvg workflow</h3></div><div id="flWorkflowDiagram"></div></div>
+        <div class="card"><div class="card-head"><h3>Global accuracy per round</h3></div><canvas id="chartFlRounds" height="230"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ======================= VIEW: MODEL PERFORMANCE ======================= -->
+    <section class="view" id="view-model-performance">
+      <div class="view-header"><div><h2>Model performance</h2><p>Global model evaluation after the final federated round.</p></div></div>
+      <div class="grid grid-4" id="modelStatGrid"></div>
+      <div class="grid grid-2" style="margin-top:24px;">
+        <div class="card"><div class="card-head"><h3>Accuracy &amp; loss</h3></div><canvas id="chartAccLoss" height="230"></canvas></div>
+        <div class="card"><div class="card-head"><h3>ROC curve</h3></div><canvas id="chartRoc" height="230"></canvas></div>
+      </div>
+      <div class="grid grid-2" style="margin-top:24px;">
+        <div class="card"><div class="card-head"><h3>Precision-recall curve</h3></div><canvas id="chartPr" height="230"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Confusion matrix</h3></div><div id="confusionMatrix"></div></div>
+      </div>
+    </section>
+
+    <!-- ======================= VIEW: ABOUT ======================= -->
+    <section class="view" id="view-about">
+      <div class="view-header"><div><h2>About this project</h2><p>FedRad — Federated Chest X-ray Disease Detection.</p></div></div>
+      <div class="grid grid-2-1">
+        <div class="card">
+          <h3 style="margin-bottom:10px;">What FedRad does</h3>
+          <p>FedRad trains a single global deep-learning model to detect chest X-ray pathologies while
+          keeping every patient image inside its own hospital. Four hospital nodes train locally on
+          their own data; only encrypted model weights are shared with a central server, which
+          aggregates them using Federated Averaging (FedAvg) to build one shared global model.</p>
+          <h3 style="margin:22px 0 10px;">Why federated learning</h3>
+          <p>Medical imaging data is sensitive and often cannot leave the institution that collected it.
+          Federated learning lets multiple hospitals collaborate on a stronger shared model without
+          any raw image ever being transmitted, copied, or centrally stored.</p>
+          <h3 style="margin:22px 0 10px;">Tech stack</h3>
+          <p>Frontend: HTML5, CSS3, vanilla JavaScript, Chart.js for charts.
+          Backend: Python, TensorFlow/Keras, Flask REST API, run entirely from a Jupyter notebook.
+          Model: transfer learning on a chest X-ray-adapted CNN backbone with Grad-CAM explainability.</p>
+        </div>
+        <div class="card">
+          <h3 style="margin-bottom:10px;">Project facts</h3>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div class="pill pill-green" style="justify-content:space-between; width:100%;">Hospitals <b class="mono">4</b></div>
+            <div class="pill pill-blue" style="justify-content:space-between; width:100%;">Architecture <b class="mono">CNN transfer-learning</b></div>
+            <div class="pill pill-amber" style="justify-content:space-between; width:100%;">Aggregation <b class="mono">FedAvg</b></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="js/icons.js"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/mockdata.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/app.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>
