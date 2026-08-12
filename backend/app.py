@@ -65,7 +65,34 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = config.SECRET_KEY
 app.config["MAX_CONTENT_LENGTH"] = config.MAX_UPLOAD_MB * 1024 * 1024
 
-CORS(app, origins=config.CORS_ORIGINS)
+# ── CORS: allow GitHub Pages (and any other origin) to call the API ──────────
+CORS(
+    app,
+    resources={r"/*": {"origins": "*"}},
+    allow_headers=["Content-Type", "Authorization", "Accept"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    supports_credentials=False,
+)
+
+@app.after_request
+def add_cors_headers(response):
+    """Ensure CORS headers are present on every response, including errors."""
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    return response
+
+@app.route("/api/<path:path>", methods=["OPTIONS"])
+@app.route("/<path:path>", methods=["OPTIONS"])
+def handle_preflight(path):
+    """Explicitly handle all CORS preflight OPTIONS requests."""
+    from flask import make_response
+    resp = make_response("", 204)
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept"
+    resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    resp.headers["Access-Control-Max-Age"] = "3600"
+    return resp
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Global model state (loaded once at startup)
