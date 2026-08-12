@@ -7,7 +7,7 @@ services:
     env: python
     region: oregon
     plan: free
-    buildCommand: "pip install -r backend/requirements.txt"
+    buildCommand: "pip install -r backend/requirements.txt && python training/generate_figures.py && mkdir -p dist && cp -r assets dist/ && cp -r css dist/ && cp -r js dist/ && cp *.html dist/ 2>/dev/null || true"
     startCommand: "cd backend && gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120"
     healthCheckPath: /health
     autoDeploy: true
