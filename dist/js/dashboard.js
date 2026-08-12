@@ -291,18 +291,35 @@ async function loadDatasetStats() {
 // ---------------------------------------------------------------------
 async function loadVizGallery() {
   const grid = document.getElementById("vizGallery");
-  const vizData = await tryApi(() => Api.getVisualizations(), { items: [] });
-  const items = vizData.items && vizData.items.length > 0 ? vizData.items : MOCK.vizGallery;
+  // Try API first; if it fails or returns empty, use MOCK.vizGallery
+  let items = MOCK.vizGallery;
+  try {
+    const vizData = await Api.getVisualizations();
+    if (vizData.items && vizData.items.length > 0) {
+      // API returns /api/figures/<file> URLs — keep them as-is (full Render URL)
+      items = vizData.items.map(v => ({
+        ...v,
+        url: v.url.startsWith("/") ? `${window.BACKEND_BASE}${v.url}` : v.url
+      }));
+    }
+  } catch (_) {
+    // CORS/network blocked — use local static fallback (GitHub Pages)
+  }
 
   grid.innerHTML = items
     .map((v) => {
-      const fullUrl = v.url ? getFullUrl(v.url) : "";
-      const imgHtml = fullUrl
-        ? `<img src="${fullUrl}" style="width:100%; height:180px; object-fit:cover; border-radius:var(--radius-md); margin-bottom:12px;" alt="${v.title}" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.insertAdjacentHTML('beforebegin', '<div class=\\'viz-placeholder\\'>Visualization unavailable</div>');" />`
-        : `<div class="viz-placeholder">Visualization unavailable</div>`;
+      // MOCK.vizGallery paths are already relative (e.g. "assets/figures/...")
+      // so we must NOT prepend the Render backend URL
+      const src = v.url || "";
       return `
     <div class="card viz-card">
-      ${imgHtml}
+      <img
+        src="${src}"
+        style="width:100%; height:180px; object-fit:cover; border-radius:var(--radius-md); margin-bottom:12px;"
+        alt="${v.title}"
+        onerror="this.style.display='none'; this.parentElement.querySelector('.viz-placeholder').style.display='flex';"
+      />
+      <div class="viz-placeholder" style="display:none; height:180px; align-items:center; justify-content:center; color:var(--ink-400); font-size:.85rem; margin-bottom:12px; border-radius:var(--radius-md); background:var(--surface-2);">Visualization unavailable</div>
       <h4>${v.title}</h4>
       <p>${v.desc}</p>
     </div>`;

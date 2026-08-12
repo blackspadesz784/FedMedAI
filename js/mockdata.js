@@ -7,9 +7,9 @@
  */
 const MOCK = {
   overview: {
-    total_patients: 0,
-    predictions_today: 0,
-    avg_confidence: 0.0,
+    total_patients: 20,
+    predictions_today: 4,
+    avg_confidence: 0.838,
     active_hospitals: 4,
   },
   recentPredictions: [
@@ -43,7 +43,7 @@ const MOCK = {
   ],
   diseaseStats: {
     labels: ["No Finding", "Infiltration", "Effusion", "Atelectasis", "Pneumonia", "Cardiomegaly", "Pneumothorax", "Mass"],
-    counts: [0, 0, 0, 0, 0, 0, 0, 0],
+    counts: [3, 2, 2, 2, 1, 2, 1, 1],
   },
   ageHistogram: {
     labels: ["0-10", "11-20", "21-30", "31-40", "41-50", "51-60", "61-70", "71-80", "81-90"],
