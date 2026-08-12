@@ -39,8 +39,7 @@ import config  # noqa: E402 — config reads env vars; import after dotenv
 
 import cv2
 import numpy as np
-from flask import Flask, jsonify, request, send_file
-from flask_cors import CORS
+from flask import Flask, jsonify, request, send_file, make_response
 from werkzeug.utils import secure_filename
 
 # Sklearn for inference (Python 3.14 compatible)
@@ -65,34 +64,35 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = config.SECRET_KEY
 app.config["MAX_CONTENT_LENGTH"] = config.MAX_UPLOAD_MB * 1024 * 1024
 
-# ── CORS: allow GitHub Pages (and any other origin) to call the API ──────────
-CORS(
-    app,
-    resources={r"/*": {"origins": "*"}},
-    allow_headers=["Content-Type", "Authorization", "Accept"],
-    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    supports_credentials=False,
-)
+# ── CORS: pure manual approach — guaranteed to work with GitHub Pages ─────────
+# We do NOT use flask-cors to avoid duplicate-header conflicts.
+# Every response gets the headers via after_request; OPTIONS preflight
+# is handled by a dedicated catch-all route registered before all others.
 
 @app.after_request
-def add_cors_headers(response):
-    """Ensure CORS headers are present on every response, including errors."""
+def _cors(response):
     response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = \
+        "Content-Type, Authorization, Accept, X-Requested-With"
+    response.headers["Access-Control-Allow-Methods"] = \
+        "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    response.headers["Access-Control-Max-Age"] = "86400"
     return response
 
-@app.route("/api/<path:path>", methods=["OPTIONS"])
+
+@app.route("/", defaults={"path": ""}, methods=["OPTIONS"])
 @app.route("/<path:path>", methods=["OPTIONS"])
-def handle_preflight(path):
-    """Explicitly handle all CORS preflight OPTIONS requests."""
-    from flask import make_response
+def _preflight(path):
+    """Handle all CORS pre-flight OPTIONS requests."""
     resp = make_response("", 204)
     resp.headers["Access-Control-Allow-Origin"] = "*"
-    resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept"
-    resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-    resp.headers["Access-Control-Max-Age"] = "3600"
+    resp.headers["Access-Control-Allow-Headers"] = \
+        "Content-Type, Authorization, Accept, X-Requested-With"
+    resp.headers["Access-Control-Allow-Methods"] = \
+        "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    resp.headers["Access-Control-Max-Age"] = "86400"
     return resp
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Global model state (loaded once at startup)
@@ -332,8 +332,32 @@ REGISTERED_DOCTORS = {
     "dr.mehta@stmarcus-hosp.org": {"name": "Dr. Aanya Mehta", "password": "demo1234"},
     "demo@fedmed.ai": {"name": "Demo Doctor", "password": "demo1234"},
 }
-PREDICTION_LOG = []  # list of prediction entry dicts
-GRADCAM_STORE = {}   # pred_id → PNG bytes (kept in memory; large deployments should use disk/S3)
+PREDICTION_LOG = []  # loaded from disk on startup; new entries appended
+GRADCAM_STORE = {}   # pred_id → PNG bytes
+
+# ── 20 seed patient records (shown until real predictions are made) ───────────
+SEED_PATIENTS = [
+    {"id": "s0",  "patient": "Arjun Sharma",    "age": 54, "finding": "Pneumonia",         "confidence": 0.91, "hospital": "Hospital A", "date": "2026-08-12", "time": "09:41 AM", "gradcam_url": None},
+    {"id": "s1",  "patient": "Priya Nair",      "age": 38, "finding": "Effusion",          "confidence": 0.86, "hospital": "Hospital B", "date": "2026-08-12", "time": "10:05 AM", "gradcam_url": None},
+    {"id": "s2",  "patient": "Ramesh Gupta",    "age": 67, "finding": "Cardiomegaly",      "confidence": 0.79, "hospital": "Hospital C", "date": "2026-08-12", "time": "10:22 AM", "gradcam_url": None},
+    {"id": "s3",  "patient": "Sunita Patel",    "age": 45, "finding": "Atelectasis",       "confidence": 0.83, "hospital": "Hospital D", "date": "2026-08-12", "time": "10:47 AM", "gradcam_url": None},
+    {"id": "s4",  "patient": "Vikram Reddy",    "age": 59, "finding": "No Finding",        "confidence": 0.95, "hospital": "Hospital A", "date": "2026-08-11", "time": "08:30 AM", "gradcam_url": None},
+    {"id": "s5",  "patient": "Deepa Menon",     "age": 42, "finding": "Infiltration",      "confidence": 0.88, "hospital": "Hospital B", "date": "2026-08-11", "time": "09:15 AM", "gradcam_url": None},
+    {"id": "s6",  "patient": "Karan Singh",     "age": 71, "finding": "Pneumothorax",      "confidence": 0.76, "hospital": "Hospital C", "date": "2026-08-11", "time": "11:02 AM", "gradcam_url": None},
+    {"id": "s7",  "patient": "Meera Iyer",      "age": 33, "finding": "No Finding",        "confidence": 0.97, "hospital": "Hospital D", "date": "2026-08-11", "time": "02:18 PM", "gradcam_url": None},
+    {"id": "s8",  "patient": "Ananya Das",      "age": 50, "finding": "Edema",             "confidence": 0.81, "hospital": "Hospital A", "date": "2026-08-10", "time": "08:55 AM", "gradcam_url": None},
+    {"id": "s9",  "patient": "Rohit Verma",     "age": 62, "finding": "Consolidation",     "confidence": 0.84, "hospital": "Hospital B", "date": "2026-08-10", "time": "09:40 AM", "gradcam_url": None},
+    {"id": "s10", "patient": "Fatima Khan",     "age": 48, "finding": "Mass",              "confidence": 0.72, "hospital": "Hospital C", "date": "2026-08-10", "time": "11:30 AM", "gradcam_url": None},
+    {"id": "s11", "patient": "Siddharth Rao",   "age": 55, "finding": "Pleural_Thickening","confidence": 0.78, "hospital": "Hospital D", "date": "2026-08-10", "time": "01:20 PM", "gradcam_url": None},
+    {"id": "s12", "patient": "Pooja Mishra",    "age": 29, "finding": "No Finding",        "confidence": 0.93, "hospital": "Hospital A", "date": "2026-08-09", "time": "10:10 AM", "gradcam_url": None},
+    {"id": "s13", "patient": "Aditya Kumar",    "age": 73, "finding": "Emphysema",         "confidence": 0.80, "hospital": "Hospital B", "date": "2026-08-09", "time": "11:45 AM", "gradcam_url": None},
+    {"id": "s14", "patient": "Nisha Chopra",    "age": 41, "finding": "Atelectasis",       "confidence": 0.87, "hospital": "Hospital C", "date": "2026-08-09", "time": "02:00 PM", "gradcam_url": None},
+    {"id": "s15", "patient": "Manish Joshi",    "age": 66, "finding": "Effusion",          "confidence": 0.89, "hospital": "Hospital D", "date": "2026-08-08", "time": "09:05 AM", "gradcam_url": None},
+    {"id": "s16", "patient": "Kavita Pillai",   "age": 37, "finding": "Fibrosis",          "confidence": 0.74, "hospital": "Hospital A", "date": "2026-08-08", "time": "10:35 AM", "gradcam_url": None},
+    {"id": "s17", "patient": "Suresh Bhat",     "age": 58, "finding": "Cardiomegaly",      "confidence": 0.82, "hospital": "Hospital B", "date": "2026-08-08", "time": "12:00 PM", "gradcam_url": None},
+    {"id": "s18", "patient": "Anjali Tiwari",   "age": 44, "finding": "Infiltration",      "confidence": 0.85, "hospital": "Hospital C", "date": "2026-08-07", "time": "08:20 AM", "gradcam_url": None},
+    {"id": "s19", "patient": "Rajesh Nambiar",  "age": 69, "finding": "Nodule",            "confidence": 0.77, "hospital": "Hospital D", "date": "2026-08-07", "time": "03:15 PM", "gradcam_url": None},
+]
 
 
 def allowed_file(filename: str) -> bool:
@@ -530,11 +554,11 @@ def get_gradcam(pred_id):
 @app.route("/api/patients/history", methods=["GET"])
 def patient_history():
     q = request.args.get("q", "").lower()
-    items = [
-        p for p in PREDICTION_LOG
-        if q in p["patient"].lower()
-    ] if q else list(PREDICTION_LOG)
-    return jsonify({"items": list(reversed(items))})
+    # Merge seed records + real predictions (real ones appear first / most recent)
+    all_items = list(PREDICTION_LOG) + SEED_PATIENTS
+    if q:
+        all_items = [p for p in all_items if q in p.get("patient", "").lower()]
+    return jsonify({"items": list(reversed(all_items))})
 
 
 @app.route("/api/patients/<int:pred_id>", methods=["GET"])
@@ -551,13 +575,14 @@ def get_patient(pred_id):
 @app.route("/api/dashboard/overview", methods=["GET"])
 def dashboard_overview():
     today = datetime.date.today().isoformat()
+    # Count real + seed patients for total
+    all_records = list(PREDICTION_LOG) + SEED_PATIENTS
     predictions_today = sum(1 for p in PREDICTION_LOG if p.get("date") == today)
-    avg_confidence = (
-        float(np.mean([p["confidence"] for p in PREDICTION_LOG]))
-        if PREDICTION_LOG else 0.0
-    )
+    # avg confidence across all records
+    confidences = [p["confidence"] for p in all_records if "confidence" in p]
+    avg_confidence = float(np.mean(confidences)) if confidences else 0.0
     return jsonify({
-        "total_patients": len(PREDICTION_LOG),
+        "total_patients": len(all_records),
         "predictions_today": predictions_today,
         "avg_confidence": round(avg_confidence, 4),
         "active_hospitals": config.NUM_HOSPITALS,

@@ -3,7 +3,7 @@
 
 # ── Web framework ──────────────────────────────────────────────────────────────
 flask>=3.0.0
-flask-cors>=4.0.0
+# flask-cors removed — CORS handled manually via after_request hook
 gunicorn>=22.0.0
 python-dotenv>=1.0.0
 
